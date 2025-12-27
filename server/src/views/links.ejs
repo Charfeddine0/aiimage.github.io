@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+<h1>Your links</h1>
+<form method="GET" action="/links" class="filter-form">
+  <input type="text" name="search" value="<%= search %>" placeholder="Search slug" />
+  <button type="submit">Search</button>
+</form>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Slug</th>
+      <th>Destination</th>
+      <th>Redirect</th>
+      <th>Expires</th>
+      <th>Clicks</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (links.length === 0) { %>
+      <tr><td colspan="7">No links found.</td></tr>
+    <% } %>
+    <% links.forEach(link => { %>
+      <tr>
+        <td><a href="/<%= link.slug %>" target="_blank"><%= link.slug %></a></td>
+        <td class="truncate"><%= link.longUrl %></td>
+        <td><%= link.redirectType %></td>
+        <td><%= link.expiresAt ? new Date(link.expiresAt).toLocaleString() : 'Never' %></td>
+        <td><%= link.clicks %></td>
+        <td><%= link.enabled ? 'Enabled' : 'Disabled' %></td>
+        <td>
+          <a href="/links/<%= link.id %>/edit">Edit</a>
+          <form method="POST" action="/links/<%= link.id %>/toggle" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="link-button"><%= link.enabled ? 'Disable' : 'Enable' %></button>
+          </form>
+        </td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<div class="pagination">
+  <% for (let p = 1; p <= totalPages; p++) { %>
+    <% if (p === page) { %>
+      <span class="page current"><%= p %></span>
+    <% } else { %>
+      <a class="page" href="/links?page=<%= p %>&search=<%= encodeURIComponent(search) %>"><%= p %></a>
+    <% } %>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

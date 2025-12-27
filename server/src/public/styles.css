@@ -1,0 +1,52 @@
+:root {
+  --primary: #2563eb;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+.container {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+.site-header, .site-footer {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.site-footer { border-top: 1px solid var(--border); border-bottom: none; }
+.site-header nav a { margin-right: 1rem; color: var(--muted); text-decoration: none; }
+.site-header nav a:hover { color: var(--text); }
+.logo { font-weight: bold; color: var(--text); text-decoration: none; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.hero { padding: 3rem 0; }
+.hero h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+.hero p { max-width: 600px; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.card { background: #fff; border: 1px solid var(--border); padding: 1rem; border-radius: 8px; }
+.button { background: var(--primary); color: #fff; padding: 0.6rem 1rem; border-radius: 6px; text-decoration: none; display: inline-block; }
+.button.secondary { background: #0ea5e9; }
+.link-button { background: none; border: none; color: var(--primary); cursor: pointer; }
+.table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.table th, .table td { border: 1px solid var(--border); padding: 0.6rem; text-align: left; }
+.form label { display: block; margin-bottom: 1rem; }
+.form input, .form select { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; }
+.alert { background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 6px; }
+.truncate { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pagination { margin: 1rem 0; }
+.page { margin-right: 0.5rem; }
+.page.current { font-weight: bold; }
+.feature-list { list-style: disc; padding-left: 1.2rem; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+.footer-links a { margin-left: 1rem; color: var(--muted); text-decoration: none; }
+.cta-buttons a { margin-right: 0.5rem; }
+.filter-form input { max-width: 300px; }

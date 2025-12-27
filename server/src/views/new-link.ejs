@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+<h1>Create a new link</h1>
+<% if (error) { %>
+  <div class="alert"><%= error %></div>
+<% } %>
+<form method="POST" action="/links" class="form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label>Destination URL
+    <input type="url" name="longUrl" required>
+  </label>
+  <label>Redirect type
+    <select name="redirectType">
+      <option value="302" selected>302 (Temporary)</option>
+      <option value="301">301 (Permanent)</option>
+    </select>
+  </label>
+  <label>Expires at (optional)
+    <input type="datetime-local" name="expiresAt">
+  </label>
+  <button type="submit" class="button">Create</button>
+</form>
+<%- include('partials/footer') %>

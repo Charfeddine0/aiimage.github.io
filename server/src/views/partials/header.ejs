@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Open Shortlinks</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container flex-between">
+      <a class="logo" href="/">Open Shortlinks</a>
+      <nav>
+        <a href="/features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <% if (currentUser) { %>
+          <a href="/dashboard">Dashboard</a>
+          <form method="POST" action="/logout" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="link-button">Logout</button>
+          </form>
+        <% } else { %>
+          <a href="/login">Login</a>
+          <a href="/register" class="button">Register</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
