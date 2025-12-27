@@ -73,15 +73,18 @@ router.get('/:slug', async (req: Request, res: Response, next: NextFunction) => 
     return next();
   }
 
+  const cacheClient = redisClient?.isOpen ? redisClient : null;
   const cacheKey = `slug:${slug}`;
   let cached: any = null;
-  try {
-    const cachedValue = await redisClient.get(cacheKey);
-    if (cachedValue) {
-      cached = JSON.parse(cachedValue);
+  if (cacheClient) {
+    try {
+      const cachedValue = await cacheClient.get(cacheKey);
+      if (cachedValue) {
+        cached = JSON.parse(cachedValue);
+      }
+    } catch (err) {
+      console.error('Redis read error', err);
     }
-  } catch (err) {
-    console.error('Redis read error', err);
   }
 
   let link = cached;
@@ -91,20 +94,22 @@ router.get('/:slug', async (req: Request, res: Response, next: NextFunction) => 
     if (!link) {
       return res.status(404).render('404', { title: 'Link not found', message: 'Link does not exist.' });
     }
-    try {
-      await redisClient.set(
-        cacheKey,
-        JSON.stringify({
-          id: link.id,
-          longUrl: link.longUrl,
-          redirectType: link.redirectType,
-          enabled: link.enabled,
-          expiresAt: link.expiresAt ? link.expiresAt.toISOString() : null,
-        }),
-        { EX: 600 }
-      );
-    } catch (err) {
-      console.error('Redis write error', err);
+    if (cacheClient) {
+      try {
+        await cacheClient.set(
+          cacheKey,
+          JSON.stringify({
+            id: link.id,
+            longUrl: link.longUrl,
+            redirectType: link.redirectType,
+            enabled: link.enabled,
+            expiresAt: link.expiresAt ? link.expiresAt.toISOString() : null,
+          }),
+          { EX: 600 }
+        );
+      } catch (err) {
+        console.error('Redis write error', err);
+      }
     }
   }
 

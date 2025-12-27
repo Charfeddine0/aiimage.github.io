@@ -96,7 +96,9 @@ router.post('/links/:id', requireAuth, async (req: Request, res: Response) => {
     },
   });
 
-  await redisClient.del(`slug:${link.slug}`);
+  if (redisClient?.isOpen) {
+    await redisClient.del(`slug:${link.slug}`);
+  }
 
   res.redirect('/dashboard');
 });
@@ -107,7 +109,9 @@ router.post('/links/:id/toggle', requireAuth, async (req: Request, res: Response
   if (!link) return res.status(404).render('404', { title: 'Link not found' });
 
   await prisma.link.update({ where: { id }, data: { enabled: !link.enabled } });
-  await redisClient.del(`slug:${link.slug}`);
+  if (redisClient?.isOpen) {
+    await redisClient.del(`slug:${link.slug}`);
+  }
   res.redirect('/dashboard');
 });
 
@@ -128,15 +132,15 @@ async function createLink({
   }
 
   return prisma.$transaction(async (tx) => {
-    const settingsRows = await tx.$queryRaw<{ id: number; nextKeywordIndex: number; nextCodeCounter: bigint }[]>`
-      SELECT "id", "nextKeywordIndex", "nextCodeCounter" FROM "Setting" WHERE "id" = 1 FOR UPDATE
-    `;
-
-    if (settingsRows.length === 0) {
-      throw new Error('Settings row missing');
-    }
-
-    const currentSettings = settingsRows[0];
+    const currentSettings = await tx.setting.upsert({
+      where: { id: 1 },
+      create: {
+        id: 1,
+        nextKeywordIndex: 0,
+        nextCodeCounter: BigInt(0),
+      },
+      update: {},
+    });
     const keywordIndex = currentSettings.nextKeywordIndex;
     const codeCounter = BigInt(currentSettings.nextCodeCounter);
     const keyword = keywords[keywordIndex % keywords.length].value;

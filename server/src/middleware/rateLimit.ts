@@ -8,8 +8,14 @@ interface RateLimitConfig {
 }
 
 async function hitLimit({ key, limit, windowSeconds }: RateLimitConfig): Promise<boolean> {
+  const client = redisClient;
+
+  if (!client || !client.isOpen) {
+    return false;
+  }
+
   const ttlKey = `rl:${key}`;
-  const multi = redisClient.multi();
+  const multi = client.multi();
   multi.incr(ttlKey);
   multi.pttl(ttlKey);
   const result = await multi.exec();
@@ -21,7 +27,7 @@ async function hitLimit({ key, limit, windowSeconds }: RateLimitConfig): Promise
   if (Number.isNaN(count) || Number.isNaN(ttl)) return false;
 
   if (ttl === -1) {
-    await redisClient.pexpire(ttlKey, windowSeconds * 1000);
+    await client.pexpire(ttlKey, windowSeconds * 1000);
   }
 
   if (count > limit) {
@@ -29,7 +35,7 @@ async function hitLimit({ key, limit, windowSeconds }: RateLimitConfig): Promise
   }
 
   if (ttl === -2) {
-    await redisClient.pexpire(ttlKey, windowSeconds * 1000);
+    await client.pexpire(ttlKey, windowSeconds * 1000);
   }
 
   return false;
