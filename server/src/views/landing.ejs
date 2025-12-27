@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <div>
+    <h1>Short, memorable links with free registration.</h1>
+    <p>SEO-friendly slugs that combine curated keywords with sequential codes. Build privacy-first shortlinks with reliable redirects and analytics.</p>
+    <div class="cta-buttons">
+      <% if (currentUser) { %>
+        <a class="button" href="/dashboard">Go to Dashboard</a>
+      <% } else { %>
+        <a class="button" href="/register">Get started free</a>
+        <a class="button secondary" href="/features">See features</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+<section class="grid">
+  <div class="card">
+    <h3>Predictable slugs</h3>
+    <p>Keywords rotate in order while codes increment sequentially. No random strings.</p>
+  </div>
+  <div class="card">
+    <h3>Own your data</h3>
+    <p>Track visits with basic analytics stored securely in PostgreSQL.</p>
+  </div>
+  <div class="card">
+    <h3>Redis-backed sessions</h3>
+    <p>Fast logins with secure session storage and bcrypt-hashed passwords.</p>
+  </div>
+</section>
+<%- include('partials/footer') %>

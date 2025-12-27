@@ -1,0 +1,50 @@
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL PRIMARY KEY,
+    "email" TEXT NOT NULL UNIQUE,
+    "password" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Keyword" (
+    "id" SERIAL PRIMARY KEY,
+    "value" TEXT NOT NULL UNIQUE,
+    "active" BOOLEAN NOT NULL DEFAULT TRUE,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Setting" (
+    "id" INTEGER PRIMARY KEY,
+    "nextKeywordIndex" INTEGER NOT NULL DEFAULT 0,
+    "nextCodeCounter" BIGINT NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Link" (
+    "id" SERIAL PRIMARY KEY,
+    "slug" TEXT NOT NULL UNIQUE,
+    "keyword" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "longUrl" TEXT NOT NULL,
+    "redirectType" INTEGER NOT NULL DEFAULT 302,
+    "expiresAt" TIMESTAMP(3),
+    "enabled" BOOLEAN NOT NULL DEFAULT TRUE,
+    "clicks" INTEGER NOT NULL DEFAULT 0,
+    "userId" INTEGER NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "Link_userId_idx" ON "Link"("userId");
+
+CREATE TABLE "Click" (
+    "id" SERIAL PRIMARY KEY,
+    "linkId" INTEGER NOT NULL REFERENCES "Link"("id") ON DELETE CASCADE,
+    "ipHash" TEXT NOT NULL,
+    "referrer" TEXT,
+    "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX "Click_linkId_idx" ON "Click"("linkId");
