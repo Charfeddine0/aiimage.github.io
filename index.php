@@ -509,6 +509,26 @@ $averageClicks = count($linkRows) > 0 ? array_sum(array_column($linkRows, 'click
                     <p class="muted">Monitor clicks, today’s activity, and status from the dashboard table.</p>
                 </div>
             </div>
+
+            <div class="card blur-panel">
+                <p class="eyebrow">منصة اختصار الروابط</p>
+                <h2>نظام متكامل لإدارة الروابط على غرار Bitly</h2>
+                <p class="muted">يقدم الموقع كل ما تحتاجه لتحويل الروابط الطويلة إلى روابط قصيرة مخصصة مع مراقبة متقدمة للأداء.</p>
+                <div class="grid">
+                    <div>
+                        <h3>تحليلات عميقة</h3>
+                        <p class="muted">إحصاءات النقرات، الموقع الجغرافي، نوع الجهاز والمتصفح، المصادر، والزمن مع حماية من الروابط الضارة.</p>
+                    </div>
+                    <div>
+                        <h3>تحكم كامل</h3>
+                        <p class="muted">إنشاء، تعديل، حذف، أرشفة، تعيين تاريخ انتهاء، كلمة مرور للروابط، وتعطيل الوصول من دول أو عناوين IP محددة.</p>
+                    </div>
+                    <div>
+                        <h3>جاهز للتوسع</h3>
+                        <p class="muted">حسابات بصلاحيات مختلفة، واجهة API للمطورين، تكامل تسويقي، ونظام إعلانات وربحية مرن دون التأثير على التجربة المجانية.</p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
