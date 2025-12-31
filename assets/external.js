@@ -1,11 +1,11 @@
-// ملف مخصص للسكريبتات الخارجية
-// أضف هنا أكواد التتبع أو الأدوات الإعلانية (مثل Google Tag Manager أو بكسل الإعلانات)
-// للحفاظ على الأداء، يحمّل هذا الملف بعد السكريبتات الأساسية.
+// Dedicated file for external scripts
+// Add tracking or ad tools here (e.g., Google Tag Manager or ad pixels)
+// Loaded after the core scripts to keep performance healthy.
 
 (function queueExternal(){
-  // مثال على تهيئة بسيطة قابلة للتعديل
+  // Simple configurable placeholder
   window.appExternal = {
     loadedAt: new Date().toISOString(),
-    note: 'أضف تكاملاتك هنا مثل تحليلات أو تتبع حملات.',
+    note: 'Add your integrations here such as analytics or campaign tracking.',
   };
 })();
