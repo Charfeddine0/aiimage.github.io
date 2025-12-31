@@ -602,6 +602,7 @@ function handleRegister(PDO $pdo): void
         'created' => date('c'),
     ]);
 
+    session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $pdo->lastInsertId();
     addFlash('success', 'Account created and logged in.');
 }
@@ -620,6 +621,7 @@ function handleLogin(PDO $pdo): void
         return;
     }
 
+    session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $user['id'];
     addFlash('success', 'Logged in successfully.');
 }
@@ -887,9 +889,17 @@ function redirectHome(): void
 function getBaseUrl(): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $hostHeader = $_SERVER['HTTP_HOST'] ?? '';
+    $parsedHost = parse_url($scheme . $hostHeader, PHP_URL_HOST);
+    $port = parse_url($scheme . $hostHeader, PHP_URL_PORT);
 
-    return $scheme . $host;
+    $host = filter_var($parsedHost, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) ?: 'localhost';
+    $portPart = ($port !== null && !in_array([$scheme, (int) $port], [
+        ['http://', 80],
+        ['https://', 443],
+    ], true)) ? ':' . $port : '';
+
+    return $scheme . $host . $portPart;
 }
 
 function showNotFound(): void
@@ -907,6 +917,16 @@ function ensureLinkColumns(PDO $pdo): void
     if (!in_array('title', $names, true)) {
         $pdo->exec('ALTER TABLE links ADD COLUMN title TEXT NULL');
     }
+
+    if (!in_array('expires_at', $names, true)) {
+        $pdo->exec('ALTER TABLE links ADD COLUMN expires_at TEXT NULL');
+    }
+
+    if (!in_array('is_active', $names, true)) {
+        $pdo->exec('ALTER TABLE links ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1');
+    }
+
+    $pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS links_slug_unique ON links(slug)');
 }
 
 function loadAds(string $path): array
