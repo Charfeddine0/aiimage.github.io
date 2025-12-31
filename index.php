@@ -78,9 +78,9 @@ $averageClicks = count($linkRows) > 0 ? array_sum(array_column($linkRows, 'click
             <h1>Modern dashboard to shorten, brand, and track every link</h1>
             <p class="lede">Create branded short URLs, watch live clicks, and control expirations from a sleek English-first interface that runs anywhere PHP runs.</p>
             <ul class="hero__highlights">
-                <li>Crisp tables with instant state toggles</li>
-                <li>One-click copy and today’s activity chips</li>
-                <li>Secure auth with CSRF protection enabled</li>
+                <li><span>⚡</span><div>Responsive dashboard with instant state toggles</div></li>
+                <li><span>📋</span><div>One-click copy, live search, and today’s activity chips</div></li>
+                <li><span>🛡️</span><div>Secure auth, hashed IPs, and CSRF protection enabled</div></li>
             </ul>
             <div class="hero__metrics">
                 <div>
@@ -221,6 +221,20 @@ $averageClicks = count($linkRows) > 0 ? array_sum(array_column($linkRows, 'click
                         <span>Links: <?php echo number_format(count($linkRows)); ?></span>
                         <span>Active now: <?php echo number_format(count($activeLinks)); ?></span>
                         <span>Avg clicks: <?php echo number_format($averageClicks, 1); ?></span>
+                    </div>
+                </div>
+                <div class="card user-badge">
+                    <p class="eyebrow">Profile</p>
+                    <h3><?php echo htmlspecialchars($currentUser['email'], ENT_QUOTES); ?></h3>
+                    <p class="muted">You are logged in and ready to shorten or edit links.</p>
+                    <div class="chip-grid">
+                        <span class="pill pill--ghost">Links: <?php echo number_format(count($linkRows)); ?></span>
+                        <span class="pill pill--ghost">Active: <?php echo number_format(count($activeLinks)); ?></span>
+                        <span class="pill pill--ghost">Clicks today: <?php echo number_format($summary['today_clicks']); ?></span>
+                    </div>
+                    <div class="chip-actions">
+                        <a class="btn ghost tiny" href="#create">Create link</a>
+                        <a class="btn ghost tiny" href="#dashboard">Manage links</a>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -455,6 +469,44 @@ $averageClicks = count($linkRows) > 0 ? array_sum(array_column($linkRows, 'click
                     <span class="feature__icon">⚡</span>
                     <h3>Ready to ship</h3>
                     <p>Runs on PHP + SQLite only—no paid services or complex setup.</p>
+                </div>
+            </div>
+
+            <div class="highlight-grid">
+                <div class="highlight-card">
+                    <span class="highlight-icon">🎛️</span>
+                    <strong>Quick actions</strong>
+                    <p class="muted">Toggle, edit, or delete without leaving the table—every change stays in sync.</p>
+                </div>
+                <div class="highlight-card">
+                    <span class="highlight-icon">🧭</span>
+                    <strong>Clear navigation</strong>
+                    <p class="muted">Anchored sections and smooth scroll keep the experience cohesive for every visitor.</p>
+                </div>
+                <div class="highlight-card">
+                    <span class="highlight-icon">🖥️</span>
+                    <strong>Fresh aesthetic</strong>
+                    <p class="muted">Glassmorphism-inspired surfaces, bolder typography, and brighter accent colors.</p>
+                </div>
+                <div class="highlight-card">
+                    <span class="highlight-icon">☁️</span>
+                    <strong>Deploy anywhere</strong>
+                    <p class="muted">No external services required—just drop on any PHP host and start shortening.</p>
+                </div>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <strong>1) Paste your link</strong>
+                    <p class="muted">Drop a destination URL and optionally a slug to keep the brand consistent.</p>
+                </div>
+                <div class="step">
+                    <strong>2) Activate & share</strong>
+                    <p class="muted">Switch it on, set expirations, and copy the branded short URL instantly.</p>
+                </div>
+                <div class="step">
+                    <strong>3) Track performance</strong>
+                    <p class="muted">Monitor clicks, today’s activity, and status from the dashboard table.</p>
                 </div>
             </div>
         </section>
