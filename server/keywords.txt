@@ -1,1 +1,0 @@
-food,game,recipe,cook,tunisian,spicy,harissa,tech,blog,news,share,create,link,short

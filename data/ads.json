@@ -1,0 +1,32 @@
+[
+  {
+    "tag": "أداة تواصل",
+    "title": "قُم بإطلاق حملات واتساب جماعية",
+    "description": "أرسل رسائل موجهة مع قوالب جاهزة وتتبّع الردود في لوحة موحدة.",
+    "url": "https://example.com/whatsapp-suite"
+  },
+  {
+    "tag": "أمن الروابط",
+    "title": "حماية إضافية للروابط القصيرة",
+    "description": "أضف فحصًا فوريًا للروابط الضارة وطبقة captcha خفيفة.",
+    "url": "https://example.com/link-shield"
+  },
+  {
+    "tag": "تصميم",
+    "title": "مكتبة قوالب صفحات هبوط",
+    "description": "حسّن معدل التحويل عبر قوالب جاهزة متوافقة مع الهواتف.",
+    "url": "https://example.com/templates"
+  },
+  {
+    "tag": "تحليلات",
+    "title": "لوحة تحليلات متقدمة",
+    "description": "تتبّع المواقع الجغرافية والأجهزة مع تصدير CSV.",
+    "url": "https://example.com/analytics"
+  },
+  {
+    "tag": "ملفات",
+    "title": "استضافة ملفات سحابية سريعة",
+    "description": "ارفع الملفات الثقيلة مع روابط مباشرة وعدادات تحميل.",
+    "url": "https://example.com/storage"
+  }
+]
