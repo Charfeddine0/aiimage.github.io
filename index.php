@@ -19,7 +19,7 @@ $_SESSION['csrf'] = $csrfToken;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '')) {
-        addFlash('error', 'تعذر التحقق من الحماية. أعد المحاولة.');
+        addFlash('error', 'CSRF validation failed. Please try again.');
         redirectHome();
     }
 
@@ -33,76 +33,169 @@ $summary = getSummaryStats($pdo, $currentUser ? (int) $currentUser['id'] : null)
 $ads = loadAds(__DIR__ . '/data/ads.json');
 $flash = consumeFlash();
 $baseUrl = getBaseUrl();
+$activeLinks = array_filter($linkRows, function ($link) {
+    return (int) $link['is_active'] === 1 && !isExpired($link['expires_at']);
+});
+$averageClicks = count($linkRows) > 0 ? array_sum(array_column($linkRows, 'clicks')) / count($linkRows) : 0;
 
 ?><!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محول الروابط | منصة تقصير مجانية مثل Bitly</title>
+    <title>Link Shortener | Free Bitly Alternative</title>
     <link rel="stylesheet" href="/assets/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <header class="topbar">
+        <div class="topbar__brand">
+            <span class="logo-dot"></span>
+            <div>
+                <strong>Link Shortener</strong>
+                <small>Smart control panel</small>
+            </div>
+        </div>
+        <nav class="topbar__nav">
+            <a href="#create">Create</a>
+            <a href="#dashboard">Links</a>
+            <a href="#features">Features</a>
+        </nav>
+        <div class="topbar__cta">
+            <?php if ($currentUser): ?>
+                <span class="pill pill--ghost"><?php echo htmlspecialchars($currentUser['email'], ENT_QUOTES); ?></span>
+            <?php else: ?>
+                <a class="btn ghost tiny" href="#create">Log in</a>
+            <?php endif; ?>
+        </div>
+    </header>
+
     <header class="hero">
         <div class="hero__content">
-            <p class="eyebrow">منصة مجانية بالكامل</p>
-            <h1>منشئ روابط قصير شبيه بـ Bitly مع لوحة تحكم وإحصائيات</h1>
-            <p class="lede">اصنع روابط قصيرة بعلامة مميزة، راقب النقرات، عطّل أو حدّد صلاحية الرابط، وكل ذلك بواجهة حديثة مدعومة بـ PHP وSQLite بدون أي تكاليف.</p>
-            <div class="hero__actions">
-                <a class="btn primary" href="#create">ابدأ مجاناً</a>
-                <a class="btn ghost" href="#features">اكتشف المزايا</a>
-            </div>
+            <div class="hero__pill">Fully free · Zero ads · Ready to deploy</div>
+            <h1>Modern dashboard to shorten, brand, and track every link</h1>
+            <p class="lede">Create branded short URLs, watch live clicks, and control expirations from a sleek English-first interface that runs anywhere PHP runs.</p>
+            <ul class="hero__highlights">
+                <li>Crisp tables with instant state toggles</li>
+                <li>One-click copy and today’s activity chips</li>
+                <li>Secure auth with CSRF protection enabled</li>
+            </ul>
             <div class="hero__metrics">
                 <div>
-                    <p class="metric__label">إجمالي الروابط</p>
+                    <p class="metric__label">Total links</p>
                     <p class="metric__value"><?php echo number_format($summary['total_links']); ?></p>
                 </div>
                 <div>
-                    <p class="metric__label">إجمالي النقرات</p>
+                    <p class="metric__label">Total clicks</p>
                     <p class="metric__value"><?php echo number_format($summary['total_clicks']); ?></p>
                 </div>
                 <div>
-                    <p class="metric__label">نشاط اليوم</p>
+                    <p class="metric__label">Today’s activity</p>
                     <p class="metric__value"><?php echo number_format($summary['today_clicks']); ?></p>
                 </div>
             </div>
+            <div class="hero__actions">
+                <a class="btn primary" href="#create">Start free</a>
+                <a class="btn ghost" href="#features">See features</a>
+            </div>
+            <div class="hero__quick card">
+                <div class="hero__quick-head">
+                    <div>
+                        <p class="eyebrow">Drop your link</p>
+                        <h3>Shorten right from the homepage</h3>
+                    </div>
+                    <?php if ($currentUser): ?>
+                        <span class="pill pill--ghost">Signed in</span>
+                    <?php else: ?>
+                        <span class="pill pill--ghost">Login required</span>
+                    <?php endif; ?>
+                </div>
+                <?php if ($currentUser): ?>
+                    <form class="quick-grid" method="post">
+                        <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                        <input type="hidden" name="action" value="create_link">
+                        <input type="hidden" name="is_active" value="1">
+                        <input type="hidden" name="expires_at" value="">
+                        <div>
+                            <label>Destination URL</label>
+                            <input name="target_url" type="url" required placeholder="https://example.com/landing">
+                        </div>
+                        <div>
+                            <label>Custom slug (optional)</label>
+                            <input name="custom_slug" type="text" pattern="[A-Za-z0-9-]{3,30}" placeholder="brand-offer">
+                        </div>
+                        <div class="quick-actions">
+                            <button class="btn primary" type="submit">Shorten now</button>
+                            <a class="btn ghost tiny" href="#create">Go to full form</a>
+                        </div>
+                    </form>
+                <?php else: ?>
+                    <div class="quick-grid quick-grid--disabled">
+                        <div>
+                            <label>Destination URL</label>
+                            <input type="url" placeholder="https://example.com/landing" disabled>
+                        </div>
+                        <div>
+                            <label>Custom slug (optional)</label>
+                            <input type="text" placeholder="brand-offer" disabled>
+                        </div>
+                        <div class="quick-actions">
+                            <a class="btn primary" href="#create">Sign in to shorten</a>
+                            <span class="muted">Login required to create links.</span>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
             <?php if ($ads): ?>
                 <div class="ads ads--inline">
-                    <?php foreach (array_slice($ads, 0, 3) as $ad): ?>
-                        <a class="ad-card" href="<?php echo htmlspecialchars($ad['url'], ENT_QUOTES); ?>" target="_blank" rel="noopener">
-                            <p class="ad-eyebrow"><?php echo htmlspecialchars($ad['tag'], ENT_QUOTES); ?></p>
-                            <h3><?php echo htmlspecialchars($ad['title'], ENT_QUOTES); ?></h3>
-                            <p><?php echo htmlspecialchars($ad['description'], ENT_QUOTES); ?></p>
-                            <span>اعرف المزيد →</span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
+                            <?php foreach (array_slice($ads, 0, 3) as $ad): ?>
+                                <a class="ad-card" href="<?php echo htmlspecialchars($ad['url'], ENT_QUOTES); ?>" target="_blank" rel="noopener">
+                                    <p class="ad-eyebrow"><?php echo htmlspecialchars($ad['tag'], ENT_QUOTES); ?></p>
+                                    <h3><?php echo htmlspecialchars($ad['title'], ENT_QUOTES); ?></h3>
+                                    <p><?php echo htmlspecialchars($ad['description'], ENT_QUOTES); ?></p>
+                                    <span>Learn more →</span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
             <?php endif; ?>
         </div>
         <div class="hero__panel">
-            <div class="card">
-                <p class="card__title">دخول سريع</p>
-                <form method="post" class="stacked">
-                    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
-                    <input type="hidden" name="action" value="login">
-                    <label>البريد الإلكتروني</label>
-                    <input name="email" type="email" required placeholder="name@example.com">
-                    <label>كلمة المرور</label>
-                    <input name="password" type="password" required minlength="8" placeholder="••••••••">
-                    <button class="btn primary" type="submit">تسجيل الدخول</button>
-                </form>
-                <div class="divider"><span>أو</span></div>
-                <form method="post" class="stacked">
-                    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
-                    <input type="hidden" name="action" value="register">
-                    <label>إنشاء حساب مجاني</label>
-                    <input name="email" type="email" required placeholder="name@example.com">
-                    <input name="password" type="password" required minlength="8" placeholder="كلمة مرور قوية">
-                    <button class="btn secondary" type="submit">إنشاء حساب</button>
-                </form>
+            <div class="card auth-card">
+                <div class="auth-card__header">
+                    <div>
+                        <p class="eyebrow">Your account</p>
+                        <h3>Sign in or create a free profile</h3>
+                        <p class="muted">Pick what you need and manage links from the first minute.</p>
+                    </div>
+                    <span class="pill pill--success">Passwords hashed & salted</span>
+                </div>
+                <div class="auth-card__grid">
+                    <form method="post" class="stacked">
+                        <p class="card__title">Log in</p>
+                        <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                        <input type="hidden" name="action" value="login">
+                        <label>Email</label>
+                        <input name="email" type="email" required placeholder="name@example.com">
+                        <label>Password</label>
+                        <input name="password" type="password" required minlength="8" placeholder="••••••••">
+                        <button class="btn primary" type="submit">Log in</button>
+                    </form>
+                    <form method="post" class="stacked secondary-panel">
+                        <p class="card__title">Create account</p>
+                        <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                        <input type="hidden" name="action" value="register">
+                        <label>Email</label>
+                        <input name="email" type="email" required placeholder="name@example.com">
+                        <label>Password</label>
+                        <input name="password" type="password" required minlength="8" placeholder="Strong password">
+                        <button class="btn secondary" type="submit">Create profile</button>
+                    </form>
+                </div>
+                <div class="auth-card__footer">
+                    <p class="muted">No credit card required—just sign up and shorten links with CSRF protection enabled.</p>
+                </div>
             </div>
         </div>
     </header>
@@ -116,102 +209,154 @@ $baseUrl = getBaseUrl();
         <?php endforeach; ?>
 
         <?php if ($currentUser): ?>
+            <section class="status-grid">
+                <div class="card status-card">
+                    <div class="status-card__head">
+                        <p class="eyebrow">User panel</p>
+                        <span class="pill pill--ghost">Online</span>
+                    </div>
+                    <h2>Welcome back, <?php echo htmlspecialchars($currentUser['email'], ENT_QUOTES); ?>. Everything is ready.</h2>
+                    <p class="muted">Brand links, pause or expire them in one click. Everything is organized in one tidy panel.</p>
+                    <div class="status-card__meta">
+                        <span>Links: <?php echo number_format(count($linkRows)); ?></span>
+                        <span>Active now: <?php echo number_format(count($activeLinks)); ?></span>
+                        <span>Avg clicks: <?php echo number_format($averageClicks, 1); ?></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-card__label">Total links</p>
+                    <p class="stat-card__value"><?php echo number_format($summary['total_links']); ?></p>
+                    <p class="muted">Every link you have created so far.</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-card__label">All clicks</p>
+                    <p class="stat-card__value"><?php echo number_format($summary['total_clicks']); ?></p>
+                    <p class="muted">Accurate tracking with hashed IPs for privacy.</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-card__label">Today</p>
+                    <p class="stat-card__value"><?php echo number_format($summary['today_clicks']); ?></p>
+                    <p class="muted">A quick pulse of today’s performance.</p>
+                </div>
+            </section>
+
             <section class="card wide">
-                <div class="section__header">
+                <div class="section__header section__header--stacked">
                     <div>
-                        <p class="eyebrow">مرحبا، <?php echo htmlspecialchars($currentUser['email'], ENT_QUOTES); ?></p>
-                        <h2>أنشئ رابطًا قصيرًا</h2>
+                        <p class="eyebrow">Create link</p>
+                        <h2>Branded short link</h2>
+                        <p class="muted">Drop in your target URL, pick a custom slug, set an expiry date, and decide if it goes live now.</p>
                     </div>
                     <form method="post">
                         <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
                         <input type="hidden" name="action" value="logout">
-                        <button class="btn ghost" type="submit">تسجيل الخروج</button>
+                        <button class="btn ghost" type="submit">Log out</button>
                     </form>
                 </div>
-                <form class="grid" method="post">
-                    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
-                    <input type="hidden" name="action" value="create_link">
-                    <div>
-                        <label>الرابط الأصلي</label>
-                        <input name="target_url" type="url" required placeholder="https://example.com/landing">
+                <div class="create-layout">
+                    <form class="grid" method="post">
+                        <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                        <input type="hidden" name="action" value="create_link">
+                        <div>
+                            <label>Destination URL</label>
+                            <input name="target_url" type="url" required placeholder="https://example.com/landing">
+                        </div>
+                        <div>
+                            <label>Internal title (optional)</label>
+                            <input name="title" type="text" maxlength="80" placeholder="Winter promo landing">
+                            <small>Helpful for identifying links in your dashboard.</small>
+                        </div>
+                        <div>
+                            <label>Custom slug (optional)</label>
+                            <input name="custom_slug" type="text" pattern="[A-Za-z0-9-]{3,30}" placeholder="brand-offer">
+                            <small>Letters, numbers, and hyphens only. 3-30 length.</small>
+                        </div>
+                        <div>
+                            <label>Expiration date (optional)</label>
+                            <input name="expires_at" type="date">
+                            <small>Link automatically disables after this date.</small>
+                        </div>
+                        <div>
+                            <label>Activate instantly</label>
+                            <label class="toggle"><input type="checkbox" name="is_active" checked> <span>Turn on after creation</span></label>
+                        </div>
+                        <div class="full">
+                            <div class="form__actions">
+                                <div class="pill pill--ghost">Duplicate slugs checked automatically</div>
+                                <button class="btn primary" type="submit">Shorten link</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="card mini-panel">
+                        <p class="eyebrow">Workflow tips</p>
+                        <h3>Keep campaigns tidy</h3>
+                        <ul class="mini-panel__list">
+                            <li>Name links by campaign so you can find them fast.</li>
+                            <li>Use custom slugs for branded paths and clarity.</li>
+                            <li>Schedule expirations for limited-time offers.</li>
+                        </ul>
+                        <div class="pill pill--ghost">Privacy-friendly click tracking</div>
                     </div>
-                    <div>
-                        <label>عنوان داخلي (اختياري)</label>
-                        <input name="title" type="text" maxlength="80" placeholder="حملة العروض الشتوية">
-                        <small>يساعدك على تمييز الرابط في لوحة التحكم.</small>
-                    </div>
-                    <div>
-                        <label>الرابط القصير (اختياري)</label>
-                        <input name="custom_slug" type="text" pattern="[A-Za-z0-9-]{3,30}" placeholder="brand-offer">
-                        <small>حروف وأرقام وشرطة فقط، طول 3-30.</small>
-                    </div>
-                    <div>
-                        <label>تاريخ الانتهاء (اختياري)</label>
-                        <input name="expires_at" type="date">
-                        <small>يتم تعطيل الرابط تلقائياً بعد التاريخ.</small>
-                    </div>
-                    <div>
-                        <label>تفعيل الرابط فوراً</label>
-                        <label class="toggle"><input type="checkbox" name="is_active" checked> <span>تشغيل الرابط بعد الإنشاء</span></label>
-                    </div>
-                    <div class="full">
-                        <button class="btn primary" type="submit">قصّر الرابط</button>
-                    </div>
-                </form>
+                </div>
             </section>
 
             <section class="card wide" id="dashboard">
-                <div class="section__header">
+                <div class="section__header section__header--stacked">
                     <div>
-                        <p class="eyebrow">لوحة التحكم</p>
-                        <h2>روابطك وإحصائياتها</h2>
+                        <p class="eyebrow">Control center</p>
+                        <h2>Your links & live stats</h2>
+                        <p class="muted">Clean grid with status, clicks, today’s activity, and quick actions.</p>
                     </div>
-                    <p class="muted">انسخ، عطّل، احذف أو راقب أداء كل رابط.</p>
+                    <div class="section__chips">
+                        <span class="pill pill--ghost">Instant copy</span>
+                        <span class="pill pill--ghost">Inline edits</span>
+                        <span class="pill pill--ghost">Safe delete</span>
+                    </div>
                 </div>
 
                 <?php if (!$linkRows): ?>
-                    <p class="muted">لم تنشئ روابط بعد. ابدأ بصنع رابطك الأول.</p>
+                    <p class="muted">You haven’t created any links yet. Start with your first one.</p>
                 <?php else: ?>
                     <div class="table">
                         <div class="table__filters">
-                            <input type="search" id="link-search" placeholder="ابحث بالعنوان أو الرابط القصير...">
+                            <input type="search" id="link-search" placeholder="Search by title or short link...">
                         </div>
                         <div class="table__head">
-                            <span>الرابط القصير</span>
-                            <span>العنوان</span>
-                            <span>الهدف</span>
-                            <span>الحالة</span>
-                            <span>النقرات</span>
-                            <span>نشاط اليوم</span>
-                            <span>إجراءات</span>
+                            <span>Short link</span>
+                            <span>Title</span>
+                            <span>Destination</span>
+                            <span>Status</span>
+                            <span>Clicks</span>
+                            <span>Today</span>
+                            <span>Actions</span>
                         </div>
                         <?php foreach ($linkRows as $link): ?>
                             <?php $shortUrl = $baseUrl . '/' . $link['slug']; ?>
                             <div class="table__row" data-search="<?php echo htmlspecialchars($shortUrl . ' ' . ($link['title'] ?? '') . ' ' . $link['target_url'], ENT_QUOTES); ?>">
                                 <div>
                                     <p class="table__title"><?php echo htmlspecialchars($shortUrl, ENT_QUOTES); ?></p>
-                                    <button class="btn tiny copy" type="button" data-copy="<?php echo htmlspecialchars($shortUrl, ENT_QUOTES); ?>">نسخ</button>
+                                    <button class="btn tiny copy" type="button" data-copy="<?php echo htmlspecialchars($shortUrl, ENT_QUOTES); ?>">Copy</button>
                                 </div>
                                 <span class="truncate" title="<?php echo htmlspecialchars($link['title'] ?? '—', ENT_QUOTES); ?>"><?php echo htmlspecialchars($link['title'] ?? '—', ENT_QUOTES); ?></span>
                                 <span class="truncate" title="<?php echo htmlspecialchars($link['target_url'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($link['target_url'], ENT_QUOTES); ?></span>
                                 <span class="badge <?php echo ((int) $link['is_active'] === 1 && !isExpired($link['expires_at'])) ? 'success' : 'warning'; ?>">
-                                    <?php echo ((int) $link['is_active'] === 1 && !isExpired($link['expires_at'])) ? 'نشط' : 'موقوف'; ?>
+                                    <?php echo ((int) $link['is_active'] === 1 && !isExpired($link['expires_at'])) ? 'Active' : 'Paused'; ?>
                                 </span>
                                 <span><?php echo number_format((int) $link['clicks']); ?></span>
                                 <span><?php echo number_format((int) $link['today_clicks']); ?></span>
                                 <div class="actions">
-                                    <button class="btn tiny secondary edit-toggle" type="button" data-target="edit-<?php echo (int) $link['id']; ?>">تحرير</button>
+                                    <button class="btn tiny secondary edit-toggle" type="button" data-target="edit-<?php echo (int) $link['id']; ?>">Edit</button>
                                     <form method="post">
                                         <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="toggle_link">
                                         <input type="hidden" name="link_id" value="<?php echo (int) $link['id']; ?>">
-                                        <button class="btn tiny ghost" type="submit"><?php echo (int) $link['is_active'] === 1 ? 'تعطيل' : 'تفعيل'; ?></button>
+                                        <button class="btn tiny ghost" type="submit"><?php echo (int) $link['is_active'] === 1 ? 'Disable' : 'Enable'; ?></button>
                                     </form>
-                                    <form method="post" onsubmit="return confirm('هل أنت متأكد من حذف الرابط؟');">
+                                    <form method="post" onsubmit="return confirm('Are you sure you want to delete this link?');">
                                         <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
                                         <input type="hidden" name="action" value="delete_link">
                                         <input type="hidden" name="link_id" value="<?php echo (int) $link['id']; ?>">
-                                        <button class="btn tiny danger" type="submit">حذف</button>
+                                        <button class="btn tiny danger" type="submit">Delete</button>
                                     </form>
                                 </div>
                             </div>
@@ -221,27 +366,27 @@ $baseUrl = getBaseUrl();
                                     <input type="hidden" name="action" value="edit_link">
                                     <input type="hidden" name="link_id" value="<?php echo (int) $link['id']; ?>">
                                     <div>
-                                        <label>العنوان</label>
+                                        <label>Title</label>
                                         <input name="title" type="text" maxlength="80" value="<?php echo htmlspecialchars($link['title'] ?? '', ENT_QUOTES); ?>">
                                     </div>
                                     <div>
-                                        <label>الرابط القصير</label>
+                                        <label>Short link</label>
                                         <input name="custom_slug" type="text" pattern="[A-Za-z0-9-]{3,30}" value="<?php echo htmlspecialchars($link['slug'], ENT_QUOTES); ?>">
                                     </div>
                                     <div>
-                                        <label>الرابط الأصلي</label>
+                                        <label>Destination</label>
                                         <input name="target_url" type="url" required value="<?php echo htmlspecialchars($link['target_url'], ENT_QUOTES); ?>">
                                     </div>
                                     <div>
-                                        <label>تاريخ الانتهاء</label>
+                                        <label>Expiration</label>
                                         <input name="expires_at" type="date" value="<?php echo $link['expires_at'] ? htmlspecialchars($link['expires_at'], ENT_QUOTES) : ''; ?>">
                                     </div>
                                     <div>
-                                        <label>الحالة</label>
-                                        <label class="toggle"><input type="checkbox" name="is_active" <?php echo ((int) $link['is_active'] === 1 && !isExpired($link['expires_at'])) ? 'checked' : ''; ?>> <span>تفعيل الرابط</span></label>
+                                        <label>Status</label>
+                                        <label class="toggle"><input type="checkbox" name="is_active" <?php echo ((int) $link['is_active'] === 1 && !isExpired($link['expires_at'])) ? 'checked' : ''; ?>> <span>Enable link</span></label>
                                     </div>
                                     <div class="full">
-                                        <button class="btn primary" type="submit">حفظ التعديلات</button>
+                                        <button class="btn primary" type="submit">Save changes</button>
                                     </div>
                                 </form>
                             </div>
@@ -254,7 +399,7 @@ $baseUrl = getBaseUrl();
                                     <p class="ad-eyebrow"><?php echo htmlspecialchars($ad['tag'], ENT_QUOTES); ?></p>
                                     <h3><?php echo htmlspecialchars($ad['title'], ENT_QUOTES); ?></h3>
                                     <p><?php echo htmlspecialchars($ad['description'], ENT_QUOTES); ?></p>
-                                    <span>اعرف المزيد →</span>
+                                    <span>Learn more →</span>
                                 </a>
                             <?php endforeach; ?>
                         </div>
@@ -264,41 +409,59 @@ $baseUrl = getBaseUrl();
         <?php else: ?>
             <section class="card wide callout">
                 <div>
-                    <p class="eyebrow">مجاناً للأبد</p>
-                    <h2>سجل لتحصل على لوحة تحكم كاملة</h2>
-                    <p class="muted">إنشاء حساب يمكّنك من التحكم في روابطك، مشاهدة التحليلات، وتعطيل الروابط عند الحاجة.</p>
-                    <a class="btn primary" href="#">ابدأ الآن</a>
+                    <p class="eyebrow">Free forever</p>
+                    <h2>Create an account to unlock the full dashboard</h2>
+                    <p class="muted">Sign up to control your links, view analytics, and disable or expire them anytime.</p>
+                    <a class="btn primary" href="#create">Get started</a>
                 </div>
                 <ul>
-                    <li>مصادقة آمنة بكلمات مرور مشفرة</li>
-                    <li>إحصائيات فورية للنقرات مع تتبع الجهاز والمصدر</li>
-                    <li>تحديد صلاحية الرابط أو إيقافه بنقرة</li>
+                    <li>Secure auth with encrypted passwords</li>
+                    <li>Live click stats with device and referrer insights</li>
+                    <li>Expire or pause links instantly</li>
                 </ul>
             </section>
         <?php endif; ?>
 
-        <section class="grid features" id="features">
-            <div class="card feature">
-                <h3>تقصير مخصص</h3>
-                <p>أضف كلمات مفتاحية وعلامة تجارية خاصة بك للرابط القصير لتزيد الثقة وتحسّن معدل النقر.</p>
+        <section class="section" id="features">
+            <div class="section__header section__header--stacked">
+                <div>
+                    <p class="eyebrow">Features</p>
+                    <h2>Everything you need to run links in one place</h2>
+                    <p class="muted">From creation to performance monitoring, every control is arranged cleanly.</p>
+                </div>
+                <div class="section__chips">
+                    <span class="pill pill--ghost">Custom slugs</span>
+                    <span class="pill pill--ghost">Live analytics</span>
+                    <span class="pill pill--ghost">Secure toggles</span>
+                </div>
             </div>
-            <div class="card feature">
-                <h3>إحصائيات فورية</h3>
-                <p>نحسب النقرات، المصدر والمتصفح مع حفظ الخصوصية عبر تشفير الـ IP.</p>
-            </div>
-            <div class="card feature">
-                <h3>التحكم الكامل</h3>
-                <p>عطّل الروابط مؤقتاً، حدّد تاريخ انتهاء أو احذفها نهائياً في أي وقت.</p>
-            </div>
-            <div class="card feature">
-                <h3>جاهز للنشر</h3>
-                <p>يعمل عبر PHP + SQLite فقط. لا حاجة لخدمات مدفوعة أو إعدادات معقدة.</p>
+            <div class="feature-grid">
+                <div class="card feature">
+                    <span class="feature__icon">🔗</span>
+                    <h3>Branded links</h3>
+                    <p>Pick a short path that matches your campaign and boost trust with clear status tags.</p>
+                </div>
+                <div class="card feature">
+                    <span class="feature__icon">📈</span>
+                    <h3>Instant metrics</h3>
+                    <p>See total clicks and today’s activity at a glance in a searchable grid.</p>
+                </div>
+                <div class="card feature">
+                    <span class="feature__icon">🛡️</span>
+                    <h3>Full control</h3>
+                    <p>Disable, delete, or edit links safely with instant confirmations.</p>
+                </div>
+                <div class="card feature">
+                    <span class="feature__icon">⚡</span>
+                    <h3>Ready to ship</h3>
+                    <p>Runs on PHP + SQLite only—no paid services or complex setup.</p>
+                </div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
-        <p>مشروع مفتوح المصدر لبناء بديل مجاني لـ Bitly باستخدام PHP وHTML وCSS وJavaScript.</p>
+        <p>Open-source Bitly alternative built with PHP, HTML, CSS, and JavaScript.</p>
     </footer>
 
     <script src="/assets/app.js"></script>
@@ -386,7 +549,7 @@ function handlePost(PDO $pdo): void
         case 'logout':
             session_destroy();
             session_start();
-            addFlash('success', 'تم تسجيل الخروج بنجاح.');
+            addFlash('success', 'You have been logged out.');
             break;
         case 'create_link':
             requireAuth();
@@ -405,7 +568,7 @@ function handlePost(PDO $pdo): void
             handleEditLink($pdo);
             break;
         default:
-            addFlash('error', 'طلب غير معروف.');
+            addFlash('error', 'Unknown request.');
     }
 }
 
@@ -415,19 +578,19 @@ function handleRegister(PDO $pdo): void
     $password = $_POST['password'] ?? '';
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        addFlash('error', 'يرجى إدخال بريد إلكتروني صحيح.');
+        addFlash('error', 'Please enter a valid email.');
         return;
     }
 
     if (strlen($password) < 8) {
-        addFlash('error', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.');
+        addFlash('error', 'Password must be at least 8 characters.');
         return;
     }
 
     $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email');
     $stmt->execute(['email' => $email]);
     if ($stmt->fetch()) {
-        addFlash('error', 'البريد الإلكتروني مسجل بالفعل.');
+        addFlash('error', 'Email is already registered.');
         return;
     }
 
@@ -440,7 +603,7 @@ function handleRegister(PDO $pdo): void
     ]);
 
     $_SESSION['user_id'] = (int) $pdo->lastInsertId();
-    addFlash('success', 'تم إنشاء الحساب وتسجيل الدخول.');
+    addFlash('success', 'Account created and logged in.');
 }
 
 function handleLogin(PDO $pdo): void
@@ -453,12 +616,12 @@ function handleLogin(PDO $pdo): void
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
-        addFlash('error', 'بيانات الدخول غير صحيحة.');
+        addFlash('error', 'Invalid credentials.');
         return;
     }
 
     $_SESSION['user_id'] = (int) $user['id'];
-    addFlash('success', 'تم تسجيل الدخول بنجاح.');
+    addFlash('success', 'Logged in successfully.');
 }
 
 function handleCreateLink(PDO $pdo): void
@@ -471,17 +634,17 @@ function handleCreateLink(PDO $pdo): void
     $isActive = isset($_POST['is_active']) ? 1 : 0;
 
     if (!filter_var($target, FILTER_VALIDATE_URL)) {
-        addFlash('error', 'رابط الهدف غير صالح.');
+        addFlash('error', 'Destination URL is invalid.');
         return;
     }
 
     if ($customSlug !== '' && !preg_match('/^[A-Za-z0-9-]{3,30}$/', $customSlug)) {
-        addFlash('error', 'صيغة الرابط القصير غير صالحة.');
+        addFlash('error', 'Short link format is invalid.');
         return;
     }
 
     if ($expires !== '' && !DateTime::createFromFormat('Y-m-d', $expires)) {
-        addFlash('error', 'صيغة تاريخ الانتهاء غير صالحة.');
+        addFlash('error', 'Expiration date format is invalid.');
         return;
     }
 
@@ -500,11 +663,11 @@ function handleCreateLink(PDO $pdo): void
             'created' => date('c'),
         ]);
     } catch (PDOException $e) {
-        addFlash('error', 'الرابط القصير مستخدم بالفعل، جرّب كلمة أخرى.');
+        addFlash('error', 'Short link already in use, try another word.');
         return;
     }
 
-    addFlash('success', 'تم إنشاء الرابط القصير بنجاح: ' . getBaseUrl() . '/' . $slug);
+    addFlash('success', 'Short link created: ' . getBaseUrl() . '/' . $slug);
 }
 
 function handleToggleLink(PDO $pdo): void
@@ -514,7 +677,7 @@ function handleToggleLink(PDO $pdo): void
 
     $link = fetchLinkOwned($pdo, $linkId, $userId);
     if (!$link) {
-        addFlash('error', 'تعذر العثور على الرابط.');
+        addFlash('error', 'Link not found.');
         return;
     }
 
@@ -522,7 +685,7 @@ function handleToggleLink(PDO $pdo): void
     $update = $pdo->prepare('UPDATE links SET is_active = :state WHERE id = :id');
     $update->execute(['state' => $newState, 'id' => $linkId]);
 
-    addFlash('success', $newState === 1 ? 'تم تفعيل الرابط.' : 'تم تعطيل الرابط.');
+    addFlash('success', $newState === 1 ? 'Link enabled.' : 'Link disabled.');
 }
 
 function handleDeleteLink(PDO $pdo): void
@@ -532,14 +695,14 @@ function handleDeleteLink(PDO $pdo): void
 
     $link = fetchLinkOwned($pdo, $linkId, $userId);
     if (!$link) {
-        addFlash('error', 'تعذر العثور على الرابط لحذفه.');
+        addFlash('error', 'Unable to find link to delete.');
         return;
     }
 
     $delete = $pdo->prepare('DELETE FROM links WHERE id = :id');
     $delete->execute(['id' => $linkId]);
 
-    addFlash('success', 'تم حذف الرابط بنجاح.');
+    addFlash('success', 'Link deleted.');
 }
 
 function handleEditLink(PDO $pdo): void
@@ -554,22 +717,22 @@ function handleEditLink(PDO $pdo): void
 
     $link = fetchLinkOwned($pdo, $linkId, $userId);
     if (!$link) {
-        addFlash('error', 'تعذر العثور على الرابط لتعديله.');
+        addFlash('error', 'Unable to find link to edit.');
         return;
     }
 
     if (!filter_var($target, FILTER_VALIDATE_URL)) {
-        addFlash('error', 'رابط الهدف غير صالح.');
+        addFlash('error', 'Destination URL is invalid.');
         return;
     }
 
     if ($customSlug !== '' && !preg_match('/^[A-Za-z0-9-]{3,30}$/', $customSlug)) {
-        addFlash('error', 'صيغة الرابط القصير غير صالحة.');
+        addFlash('error', 'Short link format is invalid.');
         return;
     }
 
     if ($expires !== '' && !DateTime::createFromFormat('Y-m-d', $expires)) {
-        addFlash('error', 'صيغة تاريخ الانتهاء غير صالحة.');
+        addFlash('error', 'Expiration date format is invalid.');
         return;
     }
 
@@ -587,11 +750,11 @@ function handleEditLink(PDO $pdo): void
             'user_id' => $userId,
         ]);
     } catch (PDOException $e) {
-        addFlash('error', 'الرابط القصير مستخدم بالفعل. اختر كلمة مختلفة.');
+        addFlash('error', 'Short link already in use. Choose another.');
         return;
     }
 
-    addFlash('success', 'تم تحديث الرابط بنجاح.');
+    addFlash('success', 'Link updated.');
 }
 
 function fetchLinkOwned(PDO $pdo, int $linkId, int $userId): ?array
@@ -710,7 +873,7 @@ function consumeFlash(): array
 function requireAuth(): void
 {
     if (!isset($_SESSION['user_id'])) {
-        addFlash('error', 'يجب تسجيل الدخول أولاً.');
+        addFlash('error', 'Please log in first.');
         redirectHome();
     }
 }
@@ -732,7 +895,7 @@ function getBaseUrl(): string
 function showNotFound(): void
 {
     http_response_code(404);
-    echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>الرابط غير موجود</title><style>body{font-family:Cairo,system-ui;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:24px;}a{color:#7dd3fc;}</style></head><body><div><h1>الرابط غير متاح</h1><p>الرابط المطلوب غير موجود أو تم تعطيله.</p><a href="/">العودة للصفحة الرئيسية</a></div></body></html>';
+    echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Link not found</title><style>body{font-family:Cairo,system-ui;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:24px;}a{color:#7dd3fc;}</style></head><body><div><h1>Link unavailable</h1><p>The requested link does not exist or has been disabled.</p><a href=\"/\">Go back home</a></div></body></html>';
     exit;
 }
 

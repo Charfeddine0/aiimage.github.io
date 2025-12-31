@@ -1,32 +1,32 @@
 [
   {
-    "tag": "أداة تواصل",
-    "title": "قُم بإطلاق حملات واتساب جماعية",
-    "description": "أرسل رسائل موجهة مع قوالب جاهزة وتتبّع الردود في لوحة موحدة.",
+    "tag": "Messaging",
+    "title": "Launch broadcast WhatsApp campaigns",
+    "description": "Send targeted messages with ready templates and track replies in one panel.",
     "url": "https://example.com/whatsapp-suite"
   },
   {
-    "tag": "أمن الروابط",
-    "title": "حماية إضافية للروابط القصيرة",
-    "description": "أضف فحصًا فوريًا للروابط الضارة وطبقة captcha خفيفة.",
+    "tag": "Link security",
+    "title": "Extra protection for short links",
+    "description": "Add instant malicious link scanning plus a lightweight captcha layer.",
     "url": "https://example.com/link-shield"
   },
   {
-    "tag": "تصميم",
-    "title": "مكتبة قوالب صفحات هبوط",
-    "description": "حسّن معدل التحويل عبر قوالب جاهزة متوافقة مع الهواتف.",
+    "tag": "Design",
+    "title": "Landing page template library",
+    "description": "Boost conversions with responsive, ready-to-launch landing templates.",
     "url": "https://example.com/templates"
   },
   {
-    "tag": "تحليلات",
-    "title": "لوحة تحليلات متقدمة",
-    "description": "تتبّع المواقع الجغرافية والأجهزة مع تصدير CSV.",
+    "tag": "Analytics",
+    "title": "Advanced analytics workspace",
+    "description": "Track geo and device data with CSV export support.",
     "url": "https://example.com/analytics"
   },
   {
-    "tag": "ملفات",
-    "title": "استضافة ملفات سحابية سريعة",
-    "description": "ارفع الملفات الثقيلة مع روابط مباشرة وعدادات تحميل.",
+    "tag": "Files",
+    "title": "Fast cloud file hosting",
+    "description": "Upload heavy files with direct links and download counters.",
     "url": "https://example.com/storage"
   }
 ]

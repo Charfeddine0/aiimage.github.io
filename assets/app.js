@@ -4,11 +4,11 @@ copyButtons.forEach((btn) => {
     const value = btn.dataset.copy;
     try {
       await navigator.clipboard.writeText(value);
-      btn.textContent = 'تم النسخ';
-      setTimeout(() => (btn.textContent = 'نسخ'), 1500);
+      btn.textContent = 'Copied';
+      setTimeout(() => (btn.textContent = 'Copy'), 1500);
     } catch (err) {
       console.error('Copy failed', err);
-      btn.textContent = 'جرّب يدويًا';
+      btn.textContent = 'Try manually';
     }
   });
 });
